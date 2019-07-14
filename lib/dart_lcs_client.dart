@@ -1,2 +1,2 @@
 export 'src/models.dart';
-export 'src/hackru_service.dart'
+export 'src/hackru_service.dart';

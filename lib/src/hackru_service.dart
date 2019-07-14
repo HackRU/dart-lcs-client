@@ -1,15 +1,13 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:dart_lcs_client/models.dart';
+import 'package:dart_lcs_client/src/models.dart';
 
-const _lcsUrl = 'https://7c5l6v7ip3.execute-api.us-west-2.amazonaws.com/lcs-test';
-//const _lcsUrl = 'https://m7cwj1fy7c.execute-api.us-west-2.amazonaws.com/mlhtest';
-const _miscUrl = 'http://hackru-misc.s3-website-us-west-2.amazonaws.com';
+///******************** HTTP Requests ********************
 
 var client = new http.Client();
 
-Future<http.Response> getMisc(String endpoint) {
-  return client.get(_miscUrl + endpoint);
+Future<http.Response> getMisc(String miscUrl, String endpoint) {
+  return client.get(miscUrl + endpoint);
 }
 
 String toParam(LcsCredential credential) {
@@ -23,21 +21,21 @@ String toParam(LcsCredential credential) {
   return param;
 }
 
-Future<http.Response> getLcs(String endpoint, [LcsCredential credential]) {
-  return client.get(_lcsUrl + endpoint + toParam(credential));
+Future<http.Response> getLcs(String lcsUrl, String endpoint, [LcsCredential credential]) {
+  return client.get(lcsUrl + endpoint + toParam(credential));
 }
 
-Future<http.Response> dayOfGetLcs(String endpoint, [LcsCredential credential]) {
-  return client.get(_lcsUrl + endpoint + toParam(credential));
+Future<http.Response> dayOfGetLcs(String lcsUrl, String endpoint, [LcsCredential credential]) {
+  return client.get(lcsUrl + endpoint + toParam(credential));
 }
 
-Future<http.Response> dayOfEvents(String endpoint, [LcsCredential credential]) {
-  return client.get(_lcsUrl + endpoint + toParam(credential));
+Future<http.Response> dayOfEvents(String lcsUrl, String endpoint, [LcsCredential credential]) {
+  return client.get(lcsUrl + endpoint + toParam(credential));
 }
 
-Future<http.Response> postLcs(String endpoint, dynamic body, [LcsCredential credential]) async {
+Future<http.Response> postLcs(String lcsUrl, String endpoint, dynamic body, [LcsCredential credential]) async {
   var encodedBody = jsonEncode(body);
-  var result = await client.post(_lcsUrl + endpoint + toParam(credential),
+  var result = await client.post(lcsUrl + endpoint + toParam(credential),
     headers: {"content-Type": "applicationi/json"},
     body: encodedBody
   );
@@ -51,26 +49,28 @@ Future<http.Response> postLcs(String endpoint, dynamic body, [LcsCredential cred
   return result;
 }
 
-// misc functions
-Future<List<String>> sitemap() async {
-  var response = await getMisc("/");
+///******************** misc functions ********************
+
+Future<List<String>> sitemap(String miscUrl) async {
+  var response = await getMisc(miscUrl, "/");
   return await response.body.split("\n");
 }
 
-Future<List<String>> events() async {
-  var response = await getMisc("/events.txt");
+Future<List<String>> events(String miscUrl) async {
+  var response = await getMisc(miscUrl, "/events.txt");
   return await response.body.split("\n");
 }
 
-Future<String> labelUrl() async {
-  var response = await getMisc("/label-url.txt");
+Future<String> labelUrl(String miscUrl) async {
+  var response = await getMisc(miscUrl, "/label-url.txt");
+
   // In case there is a newline character at the end, remove it (there was before)
   return response.body.replaceAll("\n", "");
 }
 
-void printLabel(String email, [String url]) async {
+void printLabel(String email, String miscUrl, [String url]) async {
   if (url == null) {
-    url = await labelUrl();
+    url = await labelUrl(miscUrl);
   }
   var response = await client.post(url, headers: {"Content-Type": "application/json"}, body: "{\"email\": \"$email\"}");
   if (response.statusCode != 200) {
@@ -78,16 +78,16 @@ void printLabel(String email, [String url]) async {
   }
 }
 
-Future<List<HelpResource>> helpResources() async {
-  var response =  await getMisc("/resources.json");
+Future<List<HelpResource>> helpResources(String miscUrl) async {
+  var response =  await getMisc(miscUrl, "/resources.json");
   var resources = json.decode(response.body);
   return resources.map<HelpResource>(
     (resource) => new HelpResource.fromJson(resource)
   ).toList();
 }
 
-Future<List<Announcement>> slackResources() async {
-  var response =  await dayOfGetLcs('/dayof-slack');
+Future<List<Announcement>> slackResources(String lcsUrl) async {
+  var response =  await dayOfGetLcs(lcsUrl, '/dayof-slack');
   var resources = json.decode(response.body);
   print(resources);
   if (resources["body"] == null) {
@@ -101,8 +101,8 @@ Future<List<Announcement>> slackResources() async {
     ).toList();
 }
 
-Future<List<Event>> dayofEventsResources() async {
-  var response =  await dayOfGetLcs('/dayof-events');
+Future<List<Event>> dayofEventsResources(String lcsUrl) async {
+  var response =  await dayOfGetLcs(lcsUrl, '/dayof-events');
   var resources = json.decode(response.body);
   var maped = resources["body"].map<Event>(
           (resource) => new Event.fromJson(resource)
@@ -110,13 +110,14 @@ Future<List<Event>> dayofEventsResources() async {
   return maped;
 }
 
-// lcs functions
+///******************** lcs functions ********************
 
-// /authorize can give wrong status codes
-Future<LcsCredential> login(String email, String password) async {
-  var result = await postLcs("/authorize", {
-      "email": email,
-      "password": password,
+/// TODO: Fix this
+// authorize can give wrong status codes
+Future<LcsCredential> login(String email, String password, String lcsUrl) async {
+  var result = await postLcs(lcsUrl, "/authorize", {
+    "email": email,
+    "password": password,
   });
   var body = jsonDecode(result.body);
   // quirk with lcs where it puts the actual result as a string
@@ -131,14 +132,14 @@ Future<LcsCredential> login(String email, String password) async {
   }
 }
 
-Future<User> getUser(LcsCredential credential, [String targetEmail = "MAGIC_MAN"]) async {
+Future<User> getUser(String lcsUrl, LcsCredential credential, [String targetEmail = "MAGIC_MAN"]) async {
   if(targetEmail == null) {
     throw ArgumentError("null email");
   }
   if (targetEmail == "MAGIC_MAN") {
     targetEmail = credential.email;
   }
-  var result = await postLcs("/read", {
+  var result = await postLcs(lcsUrl, "/read", {
       "email": credential.email,
       "token": credential.token,
       "query": {"email": targetEmail}
@@ -154,11 +155,12 @@ Future<User> getUser(LcsCredential credential, [String targetEmail = "MAGIC_MAN"
   }
 }
 
+/// TODO: Fix this
 // /update can give wrong status codes
 // check if the user credential belongs to is role.director first. or else it will break :(
-void updateUserDayOf(LcsCredential credential, User user, String event) async {
+void updateUserDayOf(String lcsUrl, LcsCredential credential, User user, String event) async {
   print(event);
-  var result = await postLcs("/update", {
+  var result = await postLcs(lcsUrl, "/update", {
       "updates": {"\$set":{"day_of.$event": true}},
       "user_email": user.email,
       "auth_email": credential.email,

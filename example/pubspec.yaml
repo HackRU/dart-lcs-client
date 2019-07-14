@@ -1,0 +1,15 @@
+name: dart_lcs_client_example
+
+environment:
+  sdk: ">=2.1.0-dev.68.0 <3.0.0"
+  flutter: ">=1.2.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  dart_lcs_client: "1.0.0"
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
