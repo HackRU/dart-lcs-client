@@ -104,6 +104,7 @@ Future<List<Announcement>> slackResources(String lcsUrl) async {
 Future<List<Event>> dayofEventsResources(String lcsUrl) async {
   var response =  await dayOfGetLcs(lcsUrl, '/dayof-events');
   var resources = json.decode(response.body);
+  print(resources);
   if (resources["body"] == null) {
     return [Event(summary: "Coming Soon", start: DateTime.now(), location: 'hackru_logo')];
   }
