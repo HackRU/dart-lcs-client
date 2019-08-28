@@ -90,7 +90,7 @@ Future<List<Announcement>> slackResources(String lcsUrl) async {
   var response =  await dayOfGetLcs(lcsUrl, '/dayof-slack');
   var resources = json.decode(response.body);
   print(resources);
-  if (resources["body"] == null) {
+  if (resources["body"] == null || resources["statusCode"] == 400) {
     var tsnow = (DateTime.now().millisecondsSinceEpoch~/1000).toString();
     return [Announcement(text: "Nothing yet!", ts: tsnow)];
   }
@@ -105,7 +105,7 @@ Future<List<Event>> dayofEventsResources(String lcsUrl) async {
   var response =  await dayOfGetLcs(lcsUrl, '/dayof-events');
   var resources = json.decode(response.body);
   print(resources);
-  if (resources["body"] == null) {
+  if (resources["body"] == null || resources["statusCode"] == 400) {
     return [Event(summary: "Coming Soon", start: DateTime.now(), location: 'hackru_logo')];
   }
   return resources["body"].map<Event>(
