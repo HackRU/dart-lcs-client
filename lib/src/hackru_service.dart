@@ -36,7 +36,7 @@ Future<http.Response> dayOfEvents(String lcsUrl, String endpoint, [LcsCredential
 Future<http.Response> postLcs(String lcsUrl, String endpoint, dynamic body, [LcsCredential credential]) async {
   var encodedBody = jsonEncode(body);
   var result = await client.post(lcsUrl + endpoint + toParam(credential),
-    headers: {"content-Type": "applicationi/json"},
+    headers: {"Content-Type": "application/json"},
     body: encodedBody
   );
   var decoded = jsonDecode(result.body);
