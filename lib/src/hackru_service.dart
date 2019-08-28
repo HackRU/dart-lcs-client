@@ -126,8 +126,7 @@ Future<LcsCredential> login(String email, String password, String lcsUrl) async 
   // quirk with lcs where it puts the actual result as a string
   // inside the normal body
   if (body["statusCode"] == 200) {
-    var auth = jsonDecode(body["body"])["auth"];
-    return LcsCredential.fromJson(auth);
+    return LcsCredential.fromJson(body["body"]["auth"]);
   } else if (body["statusCode"] == 403) {
     throw LcsLoginFailed();
   } else {

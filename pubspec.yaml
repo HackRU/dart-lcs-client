@@ -1,6 +1,6 @@
 name: dart_lcs_client
 description: The Official dart client for the HackRU back end
-version: 1.0.3
+version: 1.0.4
 author: HackRU RnD Flutter Team <rnd@hackru.org>
 homepage: https://github.com/HackRU/dart-lcs-client
 
