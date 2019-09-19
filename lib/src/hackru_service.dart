@@ -1,6 +1,7 @@
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+
 import 'package:dart_lcs_client/src/models.dart';
+import 'package:http/http.dart' as http;
 
 ///******************** HTTP Requests ********************
 
@@ -16,34 +17,37 @@ String toParam(LcsCredential credential) {
     if (credential.isExpired()) {
       throw CredentialExpired();
     }
-    param = "?token="+credential.token;
+    param = "?token=" + credential.token;
   }
   return param;
 }
 
-Future<http.Response> getLcs(String lcsUrl, String endpoint, [LcsCredential credential]) {
+Future<http.Response> getLcs(String lcsUrl, String endpoint,
+    [LcsCredential credential]) {
   return client.get(lcsUrl + endpoint + toParam(credential));
 }
 
-Future<http.Response> dayOfGetLcs(String lcsUrl, String endpoint, [LcsCredential credential]) {
+Future<http.Response> dayOfGetLcs(String lcsUrl, String endpoint,
+    [LcsCredential credential]) {
   return client.get(lcsUrl + endpoint + toParam(credential));
 }
 
-Future<http.Response> dayOfEvents(String lcsUrl, String endpoint, [LcsCredential credential]) {
+Future<http.Response> dayOfEvents(String lcsUrl, String endpoint,
+    [LcsCredential credential]) {
   return client.get(lcsUrl + endpoint + toParam(credential));
 }
 
-Future<http.Response> postLcs(String lcsUrl, String endpoint, dynamic body, [LcsCredential credential]) async {
+Future<http.Response> postLcs(String lcsUrl, String endpoint, dynamic body,
+    [LcsCredential credential]) async {
   var encodedBody = jsonEncode(body);
   var result = await client.post(lcsUrl + endpoint + toParam(credential),
-    headers: {"Content-Type": "application/json"},
-    body: encodedBody
-  );
+      headers: {"Content-Type": "application/json"}, body: encodedBody);
   var decoded = jsonDecode(result.body);
-  if(decoded["statusCode"] != result.statusCode) {
+  if (decoded["statusCode"] != result.statusCode) {
     print(decoded);
     print("!!!!!!!!!!!!WARNING");
-    print("body and container status code dissagree actual ${result.statusCode} body: ${decoded['statusCode']}");
+    print(
+        "body and container status code dissagree actual ${result.statusCode} body: ${decoded['statusCode']}");
     print(endpoint);
   }
   return result;
@@ -72,52 +76,65 @@ void printLabel(String email, String miscUrl, [String url]) async {
   if (url == null) {
     url = await labelUrl(miscUrl);
   }
-  var response = await client.post(url, headers: {"Content-Type": "application/json"}, body: "{\"email\": \"$email\"}");
+  var response = await client.post(url,
+      headers: {"Content-Type": "application/json"},
+      body: "{\"email\": \"$email\"}");
   if (response.statusCode != 200) {
     throw LabelPrintingError();
   }
 }
 
 Future<List<HelpResource>> helpResources(String miscUrl) async {
-  var response =  await getMisc(miscUrl, "/resources.json");
+  var response = await getMisc(miscUrl, "/resources.json");
   var resources = json.decode(response.body);
-  return resources.map<HelpResource>(
-    (resource) => new HelpResource.fromJson(resource)
-  ).toList();
+  return resources
+      .map<HelpResource>((resource) => new HelpResource.fromJson(resource))
+      .toList();
 }
 
 Future<List<Announcement>> slackResources(String lcsUrl) async {
-  var response =  await dayOfGetLcs(lcsUrl, '/dayof-slack');
+  var response = await dayOfGetLcs(lcsUrl, '/dayof-slack');
   var resources = json.decode(response.body);
   print(resources);
   if (resources["body"] == null || resources["body"]["statusCode"] == 400) {
-    var tsnow = (DateTime.now().millisecondsSinceEpoch~/1000).toString();
-    return [Announcement(text: "Nothing yet!", ts: tsnow)];
+    var tsnow = (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
+    return [
+      Announcement(
+        text: "Nothing yet!",
+        ts: tsnow,
+      )
+    ];
   }
-  return resources["body"]
-    .where((resource) => resource["text"] != null)
-    .map<Announcement>(
-      (resource) => Announcement.fromJson(resource)
-    ).toList();
+  return resources["body"]["messages"]
+      .where((resource) => resource["text"] != null)
+      .map<Announcement>((resource) => Announcement.fromJson(resource))
+      .toList();
 }
 
 Future<List<Event>> dayofEventsResources(String lcsUrl) async {
-  var response =  await dayOfGetLcs(lcsUrl, '/dayof-events');
+  var response = await dayOfGetLcs(lcsUrl, '/dayof-events');
   var resources = json.decode(response.body);
   print(resources);
   if (resources["body"] == null || resources["statusCode"] == 400) {
-    return [Event(summary: "Coming Soon", start: DateTime.now(), location: 'hackru_logo')];
+    return [
+      Event(
+        summary: "Coming Soon",
+        start: DateTime.now(),
+        location: 'hackru_logo',
+      )
+    ];
   }
-  return resources["body"].map<Event>(
-          (resource) => new Event.fromJson(resource)
-  ).toList();
+  return resources["body"]
+      .map<Event>((resource) => new Event.fromJson(resource))
+      .toList();
 }
 
 ///******************** lcs functions ********************
 
 /// TODO: Fix this
 // authorize can give wrong status codes
-Future<LcsCredential> login(String email, String password, String lcsUrl) async {
+Future<LcsCredential> login(
+    String email, String password, String lcsUrl) async {
   var result = await postLcs(lcsUrl, "/authorize", {
     "email": email,
     "password": password,
@@ -134,18 +151,23 @@ Future<LcsCredential> login(String email, String password, String lcsUrl) async 
   }
 }
 
-Future<User> getUser(String lcsUrl, LcsCredential credential, [String targetEmail = "MAGIC_MAN"]) async {
-  if(targetEmail == null) {
+Future<User> getUser(String lcsUrl, LcsCredential credential,
+    [String targetEmail = "MAGIC_MAN"]) async {
+  if (targetEmail == null) {
     throw ArgumentError("null email");
   }
   if (targetEmail == "MAGIC_MAN") {
     targetEmail = credential.email;
   }
-  var result = await postLcs(lcsUrl, "/read", {
-      "email": credential.email,
-      "token": credential.token,
-      "query": {"email": targetEmail}
-  }, credential);
+  var result = await postLcs(
+      lcsUrl,
+      "/read",
+      {
+        "email": credential.email,
+        "token": credential.token,
+        "query": {"email": targetEmail}
+      },
+      credential);
   if (result.statusCode == 200) {
     var users = jsonDecode(result.body)["body"];
     if (users.length < 1) {
@@ -160,14 +182,21 @@ Future<User> getUser(String lcsUrl, LcsCredential credential, [String targetEmai
 /// TODO: Fix this
 // /update can give wrong status codes
 // check if the user credential belongs to is role.director first. or else it will break :(
-void updateUserDayOf(String lcsUrl, LcsCredential credential, User user, String event) async {
+void updateUserDayOf(
+    String lcsUrl, LcsCredential credential, User user, String event) async {
   print(event);
-  var result = await postLcs(lcsUrl, "/update", {
-      "updates": {"\$set":{"day_of.$event": true}},
-      "user_email": user.email,
-      "auth_email": credential.email,
-      "auth": credential.token,
-  }, credential);
+  var result = await postLcs(
+      lcsUrl,
+      "/update",
+      {
+        "updates": {
+          "\$set": {"day_of.$event": true}
+        },
+        "user_email": user.email,
+        "auth_email": credential.email,
+        "auth": credential.token,
+      },
+      credential);
 
   var decoded = jsonDecode(result.body);
   if (decoded["statusCode"] == 400) {
@@ -175,7 +204,7 @@ void updateUserDayOf(String lcsUrl, LcsCredential credential, User user, String 
   } else if (decoded["statusCode"] == 403) {
     // BROKEN BECAUSE LCS
     throw PermissionError();
-  } else if (decoded["statusCode"] != 200){
+  } else if (decoded["statusCode"] != 200) {
     throw LcsError(result);
   }
 }

@@ -1,5 +1,6 @@
-import 'package:dart_lcs_client/dart_lcs_client.dart';
 import 'dart:io' show Platform;
+
+import 'package:dart_lcs_client/dart_lcs_client.dart';
 
 var env = Platform.environment;
 var _lcsUrl = 'REPLACE_WITH_LCS_URL';
@@ -51,9 +52,9 @@ void testLogin() async {
 void testPostLcsExpired() async {
   var cred = LcsCredential("Bogus", "Cred", DateTime.now());
   try {
-    await postLcs(_lcsUrl,"/read", {}, cred);
+    await postLcs(_lcsUrl, "/read", {}, cred);
     assert(false); // should have thrown CredentialExpired
-  } on CredentialExpired catch(e) {
+  } on CredentialExpired catch (e) {
     print(" ************* succesfully caught expired credential *************");
   }
 }
@@ -64,14 +65,16 @@ void testGetUser() async {
   print("************* test get user *************");
   print(user);
 }
+
 void testOtherUser() async {
   var cred = await login(env["LCS_USER"], env["LCS_PASSWORD"], _lcsUrl);
   var user = await getUser(_lcsUrl, cred, env["LCS_USER2"]);
   try {
     var baduser = await getUser(_lcsUrl, cred, "fail@email.com");
     assert(false);
-  } on NoSuchUser catch(error) {
-    print("************* successfuly caught attempt to get nonexistent user *************");
+  } on NoSuchUser catch (error) {
+    print(
+        "************* successfuly caught attempt to get nonexistent user *************");
   }
   print("************* test get a different user *************");
   print(user);
@@ -80,7 +83,8 @@ void testOtherUser() async {
 void testUpdateDayOf() async {
   var cred = await login(env["LCS_USER"], env["LCS_PASSWORD"], _lcsUrl);
   var user = await getUser(_lcsUrl, cred, env["LCS_USER2"]);
-  await updateUserDayOf(_lcsUrl, cred, user, "fake_event${DateTime.now().millisecondsSinceEpoch}");
+  await updateUserDayOf(_lcsUrl, cred, user,
+      "fake_event${DateTime.now().millisecondsSinceEpoch}");
   var user2 = await getUser(_lcsUrl, cred, env["LCS_USER2"]);
   print("************* test update user day_of *************");
   print(user);
@@ -98,5 +102,4 @@ void main() async {
   testGetUser();
   testOtherUser();
   testUpdateDayOf();
-
 }

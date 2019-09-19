@@ -8,7 +8,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  dart_lcs_client: "1.0.0"
+  dart_lcs_client: "1.0.6"
 
 dev_dependencies:
   flutter_test:
