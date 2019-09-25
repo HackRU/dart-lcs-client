@@ -96,7 +96,7 @@ Future<List<Announcement>> slackResources(String lcsUrl) async {
   var response = await dayOfGetLcs(lcsUrl, '/dayof-slack');
   var resources = json.decode(response.body);
   print(resources);
-  if (resources["body"] == null || resources["body"]["statusCode"] == 400) {
+  if (resources["body"] == null || resources["statusCode"] == 400) {
     var tsnow = (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
     return [
       Announcement(
